@@ -591,37 +591,21 @@ static BOOL aspect_isSelectorAllowedAndTrack(NSObject *self, SEL selector, Aspec
 
     // Search for the current class and the class hierarchy IF we are modifying a class object
     if (class_isMetaClass(object_getClass(self))) {
-        Class klass = [self class];
+
+        
         NSMutableDictionary *swizzledClassesDict = aspect_getSwizzledClassesDict();
         Class currentClass = [self class];
-//        do {
-//            
-//        }while ((currentClass = class_getSuperclass(currentClass)));
-        
-        
         AspectTracker *tracker = swizzledClassesDict[currentClass];
         if ([tracker.selectorNames containsObject:selectorName]) {
             
-            // Find the topmost class for the log.
-            if (tracker.parentEntry) {
-                AspectTracker *topmostEntry = tracker.parentEntry;
-                while (topmostEntry.parentEntry) {
-                    topmostEntry = topmostEntry.parentEntry;
-                }
-                NSString *errorDescription = [NSString stringWithFormat:@"Error: %@ already hooked in %@. A method can only be hooked once per class hierarchy.", selectorName, NSStringFromClass(topmostEntry.trackedClass)];
-                AspectError(AspectErrorSelectorAlreadyHookedInClassHierarchy, errorDescription);
-                return NO;
-            }else if (klass == currentClass) {
-                // Already modified and topmost!
-                return YES;
-            }
+            
+            NSString *errorDescription = [NSString stringWithFormat:@"Error: %@ already hooked in %@. A method can only be hooked once per class hierarchy.", selectorName, NSStringFromClass(tracker.trackedClass)];
+            AspectError(AspectErrorSelectorAlreadyHookedInClassHierarchy, errorDescription);
+            return NO;
         }
 
         // Add the selector as being modified.
-//        currentClass = klass;
         AspectTracker *parentTracker = nil;
-        
-//        AspectTracker *tracker = swizzledClassesDict[currentClass];
         if (!tracker) {
             tracker = [[AspectTracker alloc] initWithTrackedClass:currentClass parent:parentTracker];
             swizzledClassesDict[(id<NSCopying>)currentClass] = tracker;
