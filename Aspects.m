@@ -594,39 +594,41 @@ static BOOL aspect_isSelectorAllowedAndTrack(NSObject *self, SEL selector, Aspec
         Class klass = [self class];
         NSMutableDictionary *swizzledClassesDict = aspect_getSwizzledClassesDict();
         Class currentClass = [self class];
-        do {
-            AspectTracker *tracker = swizzledClassesDict[currentClass];
-            if ([tracker.selectorNames containsObject:selectorName]) {
-
-                // Find the topmost class for the log.
-                if (tracker.parentEntry) {
-                    AspectTracker *topmostEntry = tracker.parentEntry;
-                    while (topmostEntry.parentEntry) {
-                        topmostEntry = topmostEntry.parentEntry;
-                    }
-                    NSString *errorDescription = [NSString stringWithFormat:@"Error: %@ already hooked in %@. A method can only be hooked once per class hierarchy.", selectorName, NSStringFromClass(topmostEntry.trackedClass)];
-                    AspectError(AspectErrorSelectorAlreadyHookedInClassHierarchy, errorDescription);
-                    return NO;
-                }else if (klass == currentClass) {
-                    // Already modified and topmost!
-                    return YES;
+//        do {
+//            
+//        }while ((currentClass = class_getSuperclass(currentClass)));
+        
+        
+        AspectTracker *tracker = swizzledClassesDict[currentClass];
+        if ([tracker.selectorNames containsObject:selectorName]) {
+            
+            // Find the topmost class for the log.
+            if (tracker.parentEntry) {
+                AspectTracker *topmostEntry = tracker.parentEntry;
+                while (topmostEntry.parentEntry) {
+                    topmostEntry = topmostEntry.parentEntry;
                 }
+                NSString *errorDescription = [NSString stringWithFormat:@"Error: %@ already hooked in %@. A method can only be hooked once per class hierarchy.", selectorName, NSStringFromClass(topmostEntry.trackedClass)];
+                AspectError(AspectErrorSelectorAlreadyHookedInClassHierarchy, errorDescription);
+                return NO;
+            }else if (klass == currentClass) {
+                // Already modified and topmost!
+                return YES;
             }
-        }while ((currentClass = class_getSuperclass(currentClass)));
+        }
 
         // Add the selector as being modified.
-        currentClass = klass;
+//        currentClass = klass;
         AspectTracker *parentTracker = nil;
-        do {
-            AspectTracker *tracker = swizzledClassesDict[currentClass];
-            if (!tracker) {
-                tracker = [[AspectTracker alloc] initWithTrackedClass:currentClass parent:parentTracker];
-                swizzledClassesDict[(id<NSCopying>)currentClass] = tracker;
-            }
-            [tracker.selectorNames addObject:selectorName];
-            // All superclasses get marked as having a subclass that is modified.
-            parentTracker = tracker;
-        }while ((currentClass = class_getSuperclass(currentClass)));
+        
+//        AspectTracker *tracker = swizzledClassesDict[currentClass];
+        if (!tracker) {
+            tracker = [[AspectTracker alloc] initWithTrackedClass:currentClass parent:parentTracker];
+            swizzledClassesDict[(id<NSCopying>)currentClass] = tracker;
+        }
+        [tracker.selectorNames addObject:selectorName];
+        // All superclasses get marked as having a subclass that is modified.
+        parentTracker = tracker;
     }
 
     return YES;
